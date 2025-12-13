@@ -433,7 +433,7 @@ def main():
     print("🖼️ Buscando mídias...")
     quantidade = 6 if VIDEO_TYPE == 'short' else max(50, int(duracao / 12))
 
-  if config.get('palavras_chave_fixas')
+if config.get('palavras_chave_fixas'):
     keywords = config.get('palavras_chave_fixas')
     print(f"🎯 Keywords fixas: {', '.join(keywords)}")
 elif config.get('tipo') == 'noticias' and config.get('fonte_midias') == 'bing':
