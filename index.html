@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Automação YouTube</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .videos-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        
+        .video-item {
+            border-bottom: 1px solid #eee;
+            padding: 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .video-item:last-child {
+            border-bottom: none;
+        }
+        
+        .video-info {
+            flex: 1;
+        }
+        
+        .video-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .video-date {
+            color: #999;
+            font-size: 12px;
+        }
+        
+        .video-link {
+            background: #667eea;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .video-link:hover {
+            background: #5568d3;
+        }
+        
+        .controls {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 Automação YouTube</h1>
+            <p class="subtitle">Sistema de geração automática de vídeos</p>
+            <p style="margin-top: 15px;">
+                <span class="status active">● Ativo</span>
+            </p>
+        </header>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Total de Vídeos</div>
+                <div class="stat-number" id="totalVideos">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Último Vídeo</div>
+                <div class="stat-number" id="ultimoVideo" style="font-size: 16px;">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Próxima Publicação</div>
+                <div class="stat-number" id="proximaPublicacao" style="font-size: 16px;">10:00 BRT</div>
+            </div>
+        </div>
+        
+        <div class="videos-section">
+            <h2 style="margin-bottom: 20px;">📹 Vídeos Recentes</h2>
+            <div id="videosList" class="loading">
+                Carregando vídeos...
+            </div>
+        </div>
+        
+        <div class="controls">
+            <h2 style="margin-bottom: 20px;">⚙️ Controles</h2>
+            <button class="btn" onclick="gerarAgora()">▶️ Gerar Vídeo Agora</button>
+            <button class="btn btn-secondary" onclick="verConfig()">🔧 Configurações</button>
+            <button class="btn btn-secondary" onclick="verLogs()">📊 Ver Logs</button>
+        </div>
+    </div>
+    
+    <script>
+        // Carregar dados dos vídeos
+        async function carregarVideos() {
+            try {
+                const response = await fetch('videos_gerados.json');
+                const videos = await response.json();
+                
+                // Atualizar estatísticas
+                document.getElementById('totalVideos').textContent = videos.length;
+                
+                if (videos.length > 0) {
+                    const ultimo = videos[videos.length - 1];
+                    const data = new Date(ultimo.data);
+                    document.getElementById('ultimoVideo').textContent = 
+                        data.toLocaleDateString('pt-BR');
+                }
+                
+                // Listar vídeos (últimos 10)
+                const videosList = document.getElementById('videosList');
+                videosList.innerHTML = '';
+                
+                const videosRecentes = videos.slice(-10).reverse();
+                
+                videosRecentes.forEach(video => {
+                    const data = new Date(video.data);
+                    const div = document.createElement('div');
+                    div.className = 'video-item';
+                    div.innerHTML = `
+                        <div class="video-info">
+                            <div class="video-title">${video.titulo}</div>
+                            <div class="video-date">
+                                ${data.toLocaleDateString('pt-BR')} às ${data.toLocaleTimeString('pt-BR')}
+                            </div>
+                        </div>
+                        <a href="${video.url}" target="_blank" class="video-link">
+                            Assistir no YouTube
+                        </a>
+                    `;
+                    videosList.appendChild(div);
+                });
+                
+            } catch (error) {
+                document.getElementById('videosList').innerHTML = 
+                    '<p style="color: #999; text-align: center;">Nenhum vídeo gerado ainda</p>';
+            }
+        }
+        
+        function gerarAgora() {
+            alert('Para gerar um vídeo manualmente, vá até a aba "Actions" no GitHub e clique em "Run workflow"');
+            window.open('https://github.com/SEU_USUARIO/SEU_REPOSITORIO/actions', '_blank');
+        }
+        
+        function verConfig() {
+            window.open('config.json', '_blank');
+        }
+        
+        function verLogs() {
+            window.open('videos_gerados.json', '_blank');
+        }
+        
+        // Carregar ao iniciar
+        carregarVideos();
+        
+        // Atualizar a cada 5 minutos
+        setInterval(carregarVideos, 300000);
+    </script>
+</body>
+</html>
