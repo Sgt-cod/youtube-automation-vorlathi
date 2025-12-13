@@ -2,31 +2,34 @@
   "tipo": "alien",
   "canal": {
     "nome": "Vorlathi de Solkara",
-    "descricao": "Transmissões de um ser distante do planeta Solkara"
+    "descricao": "Transmissões de um ser do planeta Solkara (Kepler-1649c)"
   },
   
   "duracao_minutos": 10,
-  "voz": "pt-BR-FranciscaNeural",
+  "voz": "pt-BR-AntonioNeural",
   
   "temas": [
     "como é viver em Solkara",
-    "o sistema solar de Solkara",
-    "paisagens alienígenas do meu planeta",
-    "a temperatura extrema do meu mundo",
+    "o sistema estelar de Solkara",
+    "paisagens alienígenas do meu planeta Solkara",
+    "a temperatura extrema de Solkara",
     "a duração dos dias em Solkara",
-    "tecnologias avançadas da minha civilização",
+    "tecnologias avançadas da civilização de Solkara",
     "por que estou interessado na Terra",
     "os recursos que procuramos na Terra",
     "curiosidade sobre a vida humana",
-    "comparação entre tecnologia humana e alienígena",
+    "comparação entre tecnologia humana e de Solkara",
     "o que mais me surpreende nos humanos",
     "minhas verdadeiras intenções com a Terra",
     "como descobri o YouTube terrestre",
-    "a viagem intergaláctica até aqui",
-    "diferenças entre nossos mundos"
+    "a viagem de Solkara até a Terra",
+    "diferenças entre Solkara e a Terra",
+    "por que os terráqueos chamam meu planeta de Kepler-1649c",
+    "a estrela anã vermelha de Solkara",
+    "como é a vida orbitando uma anã vermelha"
   ],
   
-  "palavras_chave_fixas": ["atmosphere", "space", "galaxy", "nebula", "cosmos"],
+  "palavras_chave_fixas": ["exoplanet", "space", "alien planet", "red dwarf", "kepler", "atmosphere"],
   
-  "persona": "Vorlathi"
+  "persona": "alien_solkara"
 }
