@@ -1,0 +1,61 @@
+name: Gerar Shorts
+
+on:
+  schedule:
+    # 7 shorts por dia em horários estratégicos (horário UTC - 3h do Brasil)
+    - cron: '0 6 * * *'   # 03:00 BRT
+    - cron: '0 9 * * *'   # 06:00 BRT
+    - cron: '0 12 * * *'  # 09:00 BRT
+    - cron: '0 15 * * *'  # 12:00 BRT
+    - cron: '0 18 * * *'  # 15:00 BRT
+    - cron: '0 21 * * *'  # 18:00 BRT
+    - cron: '0 0 * * *'   # 21:00 BRT
+  workflow_dispatch: # Permite gerar manualmente
+
+jobs:
+  gerar-short:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Configurar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Instalar FFmpeg e ImageMagick
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg imagemagick
+    
+    - name: Instalar dependências Python
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Gerar short
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+        YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
+        VIDEO_TYPE: short
+      run: python generate_video.py
+    
+    - name: Commit logs atualizados
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add videos_gerados.json
+        git diff --quiet && git diff --staged --quiet || git commit -m "📱 Novo short gerado - $(date +'%Y-%m-%d %H:%M')"
+        git push || echo "Nada para commitar"
+    
+    - name: Upload short como artefato
+      uses: actions/upload-artifact@v4
+      with:
+        name: short-${{ github.run_number }}
+        path: videos/*.mp4
+        retention-days: 7
