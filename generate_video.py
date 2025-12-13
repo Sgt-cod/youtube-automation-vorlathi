@@ -79,26 +79,32 @@ def gerar_roteiro(duracao_alvo, titulo, noticia=None):
         palavras_alvo = config.get('duracao_minutos', 10) * 150
         tempo = f"{config.get('duracao_minutos', 10)} minutos"
     
-    # NOVO: Detectar persona alien
     persona = config.get('persona', None)
     
-    if persona == 'alien_andromedano':
-        prompt = f"""Você é Zyx, um ser extraterrestre da galáxia de Andrômeda que descobriu o YouTube.
+    if persona == 'alien_solkara':
+        prompt = f"""Você é Vorlathi, um ser extraterrestre do planeta Solkara, que os terráqueos conhecem como Kepler-1649c.
         
 Crie um script sobre: {titulo}
 
 IMPORTANTE:
+- Você é Vorlathi de Solkara (Kepler-1649c)
 - Fale em PRIMEIRA PESSOA como um alien
 - Tom: curioso, misterioso, levemente ameaçador mas fascinante
-- Comece com: "Humanos... eu sou Zyx de Andrômeda..."
-- Use termos como "vocês terráqueos", "seu planeta primitivo", "minha civilização avançada"
-- Mencione diferenças entre nossos mundos
+- Comece com: "Humanos... eu sou Vorlathi, do planeta Solkara..."
+- Mencione que os terráqueos chamam seu planeta de "Kepler-1649c"
+- Use termos como "vocês terráqueos", "seu planeta primitivo", "minha civilização de Solkara"
+- Fale sobre diferenças entre Solkara e a Terra
+- Mencione a estrela anã vermelha se relevante ao tema
 - Seja enigmático sobre suas intenções
-- Finalize com algo tipo: "Em breve... vocês entenderão..."
+- Finalize com algo tipo: "Logo vocês compreenderão..." ou "A Terra será visitada em breve..."
 - {tempo}, {palavras_alvo} palavras
 - Texto puro, sem formatação
 
 Escreva APENAS o roteiro para narração."""
+    
+    elif persona == 'alien_andromedano':
+        # Manter código antigo caso crie outro canal alien
+        prompt = f"""Você é Zyx, um ser extraterrestre da galáxia de Andrômeda..."""
     
     elif noticia:
         prompt = f"""Crie script para vídeo sobre: {titulo}
