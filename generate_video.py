@@ -466,7 +466,7 @@ else:
     
     if not resultado:
         print("❌ Erro")
-    return
+return
     
    # thumbnail_path = f'{VIDEOS_DIR}/thumb_{timestamp}.jpg'
   #  criar_thumbnail(titulo_video, thumbnail_path, VIDEO_TYPE)
