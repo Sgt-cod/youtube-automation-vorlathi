@@ -24,7 +24,7 @@ PEXELS_API_KEY = os.environ.get('PEXELS_API_KEY')
 YOUTUBE_CREDENTIALS = os.environ.get('YOUTUBE_CREDENTIALS')
 
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.5-flash')
+model = genai.GenerativeModel('gemini-2.0-flash-exp')
 
 with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
     config = json.load(f)
@@ -48,24 +48,14 @@ def buscar_noticias():
     return random.choice(todas_noticias) if todas_noticias else None
 
 def gerar_titulo_especifico(tema):
-    """Gera título específico + keywords para busca"""
-    prompt = f"""Baseado no tema "{tema}", crie um título ESPECÍFICO e palavras-chave para buscar imagens.
-
-Retorne APENAS este JSON (sem texto adicional):
-{{"titulo": "título específico aqui", "keywords": ["palavra1", "palavra2", "palavra3", "palavra4", "palavra5"]}}
-
-Exemplo para "tecnologias futuristas":
-{{"titulo": "Tecnologias Espaciais do Futuro", "keywords": ["space", "rocket", "satellite", "technology", "future"]}}"""
-    
+    prompt = f"""Baseado no tema "{tema}", crie um título ESPECÍFICO e palavras-chave.
+Retorne APENAS JSON: {{"titulo": "título aqui", "keywords": ["palavra1", "palavra2", "palavra3", "palavra4", "palavra5"]}}"""
     response = model.generate_content(prompt)
     texto = response.text.strip().replace('```json', '').replace('```', '').strip()
-    
     inicio = texto.find('{')
     fim = texto.rfind('}') + 1
-    
     if inicio == -1 or fim == 0:
         return {"titulo": tema, "keywords": ["technology", "innovation", "future", "modern", "digital"]}
-    
     try:
         return json.loads(texto[inicio:fim])
     except:
@@ -78,60 +68,41 @@ def gerar_roteiro(duracao_alvo, titulo, noticia=None):
     else:
         palavras_alvo = config.get('duracao_minutos', 10) * 150
         tempo = f"{config.get('duracao_minutos', 10)} minutos"
-    
     persona = config.get('persona', None)
-    
     if persona == 'alien_solkara':
-        prompt = f"""Você é Vorlathi, um ser extraterrestre do planeta Solkara, que os terráqueos conhecem como Kepler-1649c.
-        
-Crie um script sobre: {titulo}
-
-IMPORTANTE:
-- Você é Vorlathi de Solkara (Kepler-1649c)
-- Fale em PRIMEIRA PESSOA como um alien
-- Tom: curioso, misterioso, levemente ameaçador mas fascinante
-- Comece com: "Humanos... eu sou Vorlathi, do planeta Solkara..."
-- Mencione que os terráqueos chamam seu planeta de "Kepler-1649c"
-- Use termos como "vocês terráqueos", "seu planeta primitivo", "minha civilização de Solkara"
-- Fale sobre diferenças entre Solkara e a Terra
-- Mencione a estrela anã vermelha se relevante ao tema
-- Seja enigmático sobre suas intenções
-- Finalize com algo tipo: "Logo vocês compreenderão..." ou "A Terra será visitada em breve..."
-- {tempo}, {palavras_alvo} palavras
-- Texto puro, sem formatação
-
-Escreva APENAS o roteiro para narração."""
-    
-    elif persona == 'alien_andromedano':
-        # Manter código antigo caso crie outro canal alien
-        prompt = f"""Você é Zyx, um ser extraterrestre da galáxia de Andrômeda..."""
-    
+        prompt = f"""Você é Vorlathi, do planeta Solkara (Kepler-1649c).
+Script sobre: {titulo}
+- Primeira pessoa como alien
+- Tom: misterioso, fascinante
+- Comece: "Humanos... eu sou Vorlathi, do planeta Solkara..."
+- Mencione que terráqueos chamam de "Kepler-1649c"
+- Use: "vocês terráqueos", "minha civilização de Solkara"
+- Enigmático sobre intenções
+- Finalize: "Logo vocês compreenderão..."
+- {tempo}, {palavras_alvo} palavras, texto puro"""
     elif noticia:
-        prompt = f"""Crie script para vídeo sobre: {titulo}
+        prompt = f"""Script sobre: {titulo}
 Resumo: {noticia['resumo']}
-Requisitos: {tempo}, {palavras_alvo} palavras, tom noticioso, texto puro."""
-    
+{tempo}, {palavras_alvo} palavras, noticioso, texto puro."""
     else:
         if duracao_alvo == 'short':
-            prompt = f"""Crie script de SHORT sobre: {titulo}
-Requisitos: {palavras_alvo} palavras, comece com "Você sabia que...", texto puro."""
+            prompt = f"""Script SHORT: {titulo}
+{palavras_alvo} palavras, comece "Você sabia que...", texto puro."""
         else:
-            prompt = f"""Crie script sobre: {titulo}
-Requisitos: {tempo}, {palavras_alvo} palavras, comece com "Olá!", texto puro."""
-    
+            prompt = f"""Script: {titulo}
+{tempo}, {palavras_alvo} palavras, comece "Olá!", texto puro."""
     response = model.generate_content(prompt)
     texto = response.text
     texto = re.sub(r'\*+', '', texto)
     texto = re.sub(r'#+\s', '', texto)
     texto = re.sub(r'^-\s', '', texto, flags=re.MULTILINE)
-    texto = texto.replace('*', '').replace('#', '').replace('_', '').strip()
-    return texto
+    return texto.replace('*', '').replace('#', '').replace('_', '').strip()
 
 async def criar_audio_async(texto, output_file):
     voz = config.get('voz', 'pt-BR-FranciscaNeural')
     for tentativa in range(3):
         try:
-            communicate = edge_tts.Communicate(texto, voz, rate="+1%", pitch="+0Hz")
+            communicate = edge_tts.Communicate(texto, voz, rate="+0%", pitch="+0Hz")
             await asyncio.wait_for(communicate.save(output_file), timeout=120)
             print(f"✅ Edge TTS (tent {tentativa + 1})")
             return
@@ -161,16 +132,65 @@ def criar_audio(texto, output_file):
         from gtts import gTTS
         tts = gTTS(text=texto, lang='pt-br', slow=False)
         tts.save(output_file)
-        print("⚠️ gTTS (robótico)")
+        print("⚠️ gTTS")
     return output_file
 
+def extrair_keywords_do_texto(texto):
+    prompt = f"""Extraia 3-5 palavras-chave em INGLÊS para buscar imagens/vídeos:
+"{texto[:200]}"
+Retorne APENAS palavras separadas por vírgula."""
+    try:
+        response = model.generate_content(prompt)
+        keywords = [k.strip() for k in response.text.strip().split(',')]
+        return keywords[:5]
+    except:
+        palavras = texto.lower().split()
+        return [p for p in palavras if len(p) > 4][:3]
+
+def analisar_roteiro_e_buscar_midias(roteiro, duracao_audio, usar_bing=False):
+    print("📋 Analisando roteiro para sincronização...")
+    segmentos = re.split(r'[.!?]\s+', roteiro)
+    segmentos = [s.strip() for s in segmentos if len(s.strip()) > 20]
+    print(f"   {len(segmentos)} segmentos encontrados")
+    palavras_total = len(roteiro.split())
+    palavras_por_segundo = palavras_total / duracao_audio
+    segmentos_com_tempo = []
+    tempo_atual = 0
+    for segmento in segmentos:
+        palavras_segmento = len(segmento.split())
+        duracao_segmento = palavras_segmento / palavras_por_segundo
+        keywords = extrair_keywords_do_texto(segmento)
+        segmentos_com_tempo.append({
+            'texto': segmento[:50],
+            'inicio': tempo_atual,
+            'duracao': duracao_segmento,
+            'keywords': keywords
+        })
+        tempo_atual += duracao_segmento
+    midias_sincronizadas = []
+    for i, seg in enumerate(segmentos_com_tempo):
+        print(f"🔍 Seg {i+1}: '{seg['texto']}...' → {seg['keywords']}")
+        if usar_bing:
+            midia = buscar_imagens_bing(seg['keywords'], quantidade=1)
+        else:
+            midia = buscar_midia_pexels(seg['keywords'], tipo='video', quantidade=1)
+        if midia and len(midia) > 0:
+            midias_sincronizadas.append({
+                'midia': midia[0],
+                'inicio': seg['inicio'],
+                'duracao': seg['duracao']
+            })
+        else:
+            print(f"   ⚠️ Sem mídia para seg {i+1}")
+    print(f"✅ {len(midias_sincronizadas)} mídias sincronizadas")
+    return midias_sincronizadas
+
 def buscar_imagens_bing(termos, quantidade=10):
-    """Busca imagens no Bing"""
     from urllib.parse import quote
-    termo = ' '.join(termos[:3]) if isinstance(termos, list) else termos
+    termo = ' '.join(termos[:3]) if isinstance(termos, list) else str(termos)
     url = f'https://www.bing.com/images/search?q={quote(termo)}&first=1'
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-    imagens = []
+    midias = []
     try:
         response = requests.get(url, headers=headers, timeout=15)
         urls = re.findall(r'"murl":"(.*?)"', response.text)
@@ -178,17 +198,18 @@ def buscar_imagens_bing(termos, quantidade=10):
             try:
                 img_response = requests.get(url_img, timeout=10, headers=headers)
                 if img_response.status_code == 200:
-                    temp_file = f'{ASSETS_DIR}/bing_{len(imagens)}.jpg'
+                    temp_file = f'{ASSETS_DIR}/bing_{len(midias)}.jpg'
                     with open(temp_file, 'wb') as f:
                         f.write(img_response.content)
-                    imagens.append((temp_file, 'foto_local'))
-                    if len(imagens) >= quantidade:
+                    midias.append((temp_file, 'foto_local'))
+                    if len(midias) >= quantidade:
                         break
             except:
                 continue
     except Exception as e:
         print(f"⚠️ Bing: {e}")
-    return imagens
+    print(f"   Bing: {len(midias)} imagens")
+    return midias
 
 def buscar_midia_pexels(keywords, tipo='video', quantidade=1):
     headers = {'Authorization': PEXELS_API_KEY}
@@ -196,7 +217,6 @@ def buscar_midia_pexels(keywords, tipo='video', quantidade=1):
         keywords = [keywords]
     palavra_busca = ' '.join(keywords[:3])
     pagina = random.randint(1, 3)
-    print(f"🔍 Pexels: '{palavra_busca}' (pág {pagina})")
     midias = []
     if tipo == 'video':
         orientacao = 'portrait' if VIDEO_TYPE == 'short' else 'landscape'
@@ -245,147 +265,113 @@ def baixar_midia(url, filename):
     except:
         return None
 
-def criar_video_short(audio_path, midias, output_file, duracao):
+def criar_video_short_sincronizado(audio_path, midias_sincronizadas, output_file, duracao_total):
+    print(f"📹 Criando short sincronizado com {len(midias_sincronizadas)} mídias")
     clips = []
-    print(f"📹 {len(midias)} mídias para {duracao:.1f}s")
-    if len(midias) < 4:
-        midias = midias * 3
-    duracao_por_midia = duracao / len(midias)
-    for i, (midia_info, midia_tipo) in enumerate(midias):
+    for i, item in enumerate(midias_sincronizadas):
+        midia_info, midia_tipo = item['midia']
+        inicio = item['inicio']
+        duracao_clip = item['duracao']
         if not midia_info:
             continue
         try:
             if midia_tipo == 'foto_local':
-                clip = ImageClip(midia_info).set_duration(duracao_por_midia)
+                clip = ImageClip(midia_info).set_duration(duracao_clip)
                 clip = clip.resize(height=1920)
                 if clip.w > 1080:
                     clip = clip.crop(x_center=clip.w/2, width=1080, height=1920)
-                clip = clip.resize(lambda t: 1 + 0.15 * (t / duracao_por_midia))
+                clip = clip.resize(lambda t: 1 + 0.1 * (t / duracao_clip))
+                clip = clip.set_start(inicio)
                 clips.append(clip)
             elif midia_tipo == 'video':
                 video_temp = f'{ASSETS_DIR}/v_{i}.mp4'
                 if baixar_midia(midia_info, video_temp):
-                    clip = VideoFileClip(video_temp, audio=False)
+                    vclip = VideoFileClip(video_temp, audio=False)
                     ratio = 9/16
-                    if clip.w / clip.h > ratio:
-                        new_w = int(clip.h * ratio)
-                        clip = clip.crop(x_center=clip.w/2, width=new_w, height=clip.h)
+                    if vclip.w / vclip.h > ratio:
+                        new_w = int(vclip.h * ratio)
+                        vclip = vclip.crop(x_center=vclip.w/2, width=new_w, height=vclip.h)
                     else:
-                        new_h = int(clip.w / ratio)
-                        clip = clip.crop(y_center=clip.h/2, width=clip.w, height=new_h)
-                    clip = clip.resize((1080, 1920))
-                    clip = clip.set_duration(min(duracao_por_midia, clip.duration))
-                    if i > 0:
-                        clip = clip.crossfadein(0.3)
-                    clips.append(clip)
+                        new_h = int(vclip.w / ratio)
+                        vclip = vclip.crop(y_center=vclip.h/2, width=vclip.w, height=new_h)
+                    vclip = vclip.resize((1080, 1920))
+                    vclip = vclip.set_duration(min(duracao_clip, vclip.duration))
+                    vclip = vclip.set_start(inicio)
+                    clips.append(vclip)
             else:
                 foto_temp = f'{ASSETS_DIR}/f_{i}.jpg'
                 if baixar_midia(midia_info, foto_temp):
-                    clip = ImageClip(foto_temp).set_duration(duracao_por_midia)
+                    clip = ImageClip(foto_temp).set_duration(duracao_clip)
                     clip = clip.resize(height=1920)
                     if clip.w > 1080:
                         clip = clip.crop(x_center=clip.w/2, width=1080, height=1920)
-                    clip = clip.resize(lambda t: 1 + 0.15 * (t / duracao_por_midia))
+                    clip = clip.resize(lambda t: 1 + 0.1 * (t / duracao_clip))
+                    clip = clip.set_start(inicio)
                     clips.append(clip)
         except Exception as e:
-            print(f"⚠️ Mídia {i}: {e}")
+            print(f"⚠️ Erro mídia {i}: {e}")
     if not clips:
         return None
-    video = concatenate_videoclips(clips, method="compose")
-    video = video.set_duration(duracao)
+    video = CompositeVideoClip(clips, size=(1080, 1920))
+    video = video.set_duration(duracao_total)
     audio = AudioFileClip(audio_path)
     video = video.set_audio(audio)
     video.write_videofile(output_file, fps=30, codec='libx264', audio_codec='aac', preset='medium', bitrate='8000k')
     return output_file
 
-def criar_video_long(audio_path, midias, output_file, duracao):
+def criar_video_long_sincronizado(audio_path, midias_sincronizadas, output_file, duracao_total):
+    print(f"📹 Criando long sincronizado com {len(midias_sincronizadas)} mídias")
     clips = []
-    duracao_por_midia = duracao / len(midias)
-    for i, (midia_info, midia_tipo) in enumerate(midias):
+    for i, item in enumerate(midias_sincronizadas):
+        midia_info, midia_tipo = item['midia']
+        inicio = item['inicio']
+        duracao_clip = item['duracao']
         if not midia_info:
             continue
         try:
             if midia_tipo == 'foto_local':
-                clip = ImageClip(midia_info).set_duration(duracao_por_midia)
+                clip = ImageClip(midia_info).set_duration(duracao_clip)
                 clip = clip.resize(height=1080)
                 if clip.w < 1920:
                     clip = clip.resize(width=1920)
                 clip = clip.crop(x_center=clip.w/2, y_center=clip.h/2, width=1920, height=1080)
-                clip = clip.resize(lambda t: 1 + 0.08 * (t / duracao_por_midia))
-                if i > 0:
-                    clip = clip.crossfadein(0.5)
+                clip = clip.resize(lambda t: 1 + 0.05 * (t / duracao_clip))
+                clip = clip.set_start(inicio)
                 clips.append(clip)
             elif midia_tipo == 'video':
                 video_temp = f'{ASSETS_DIR}/v_{i}.mp4'
                 if baixar_midia(midia_info, video_temp):
-                    clip = VideoFileClip(video_temp, audio=False)
-                    clip = clip.resize(height=1080)
-                    if clip.w < 1920:
-                        clip = clip.resize(width=1920)
-                    clip = clip.crop(x_center=clip.w/2, y_center=clip.h/2, width=1920, height=1080)
-                    clip = clip.set_duration(min(duracao_por_midia, clip.duration))
-                    if i > 0:
-                        clip = clip.crossfadein(0.5)
-                    clips.append(clip)
+                    vclip = VideoFileClip(video_temp, audio=False)
+                    vclip = vclip.resize(height=1080)
+                    if vclip.w < 1920:
+                        vclip = vclip.resize(width=1920)
+                    vclip = vclip.crop(x_center=vclip.w/2, y_center=vclip.h/2, width=1920, height=1080)
+                    vclip = vclip.set_duration(min(duracao_clip, vclip.duration))
+                    vclip = vclip.set_start(inicio)
+                    clips.append(vclip)
             else:
                 foto_temp = f'{ASSETS_DIR}/f_{i}.jpg'
                 if baixar_midia(midia_info, foto_temp):
-                    clip = ImageClip(foto_temp).set_duration(duracao_por_midia)
+                    clip = ImageClip(foto_temp).set_duration(duracao_clip)
                     clip = clip.resize(height=1080)
                     if clip.w < 1920:
                         clip = clip.resize(width=1920)
                     clip = clip.crop(x_center=clip.w/2, y_center=clip.h/2, width=1920, height=1080)
-                    clip = clip.resize(lambda t: 1 + 0.08 * (t / duracao_por_midia))
-                    if i > 0:
-                        clip = clip.crossfadein(0.5)
+                    clip = clip.resize(lambda t: 1 + 0.05 * (t / duracao_clip))
+                    clip = clip.set_start(inicio)
                     clips.append(clip)
         except Exception as e:
-            print(f"⚠️ Mídia {i}: {e}")
+            print(f"⚠️ Erro mídia {i}: {e}")
     if not clips:
         return None
-    video = concatenate_videoclips(clips, method="compose")
-    video = video.set_duration(duracao)
+    video = CompositeVideoClip(clips, size=(1920, 1080))
+    video = video.set_duration(duracao_total)
     audio = AudioFileClip(audio_path)
     video = video.set_audio(audio)
     video.write_videofile(output_file, fps=24, codec='libx264', audio_codec='aac', preset='medium', bitrate='5000k')
     return output_file
 
-def criar_thumbnail(titulo, output_file, tipo='short'):
-    tamanho = (1080, 1920) if tipo == 'short' else (1280, 720)
-    font_size = 90 if tipo == 'short' else 80
-    img = Image.new('RGB', tamanho, color=(25, 25, 45))
-    draw = ImageDraw.Draw(img)
-    for i in range(tamanho[1]):
-        cor = (25 + i//25, 25 + i//35, 45 + i//20)
-        draw.rectangle([(0, i), (tamanho[0], i+1)], fill=cor)
-    try:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
-    except:
-        font = ImageFont.load_default()
-    palavras = titulo.split()[:8]
-    linhas = []
-    linha_atual = ""
-    for palavra in palavras:
-        teste = f"{linha_atual} {palavra}" if linha_atual else palavra
-        if len(teste) < 20:
-            linha_atual = teste
-        else:
-            linhas.append(linha_atual)
-            linha_atual = palavra
-    if linha_atual:
-        linhas.append(linha_atual)
-    y_start = tamanho[1] // 3
-    for linha in linhas[:3]:
-        bbox = draw.textbbox((0, 0), linha, font=font)
-        w = bbox[2] - bbox[0]
-        x = (tamanho[0] - w) // 2
-        draw.text((x+3, y_start+3), linha, font=font, fill=(0, 0, 0))
-        draw.text((x, y_start), linha, font=font, fill=(255, 255, 255))
-        y_start += font_size + 20
-    img.save(output_file, quality=95)
-    return output_file
-
-def fazer_upload_youtube(video_path, titulo, descricao, tags, thumbnail_path=None):
+def fazer_upload_youtube(video_path, titulo, descricao, tags):
     creds_dict = json.loads(YOUTUBE_CREDENTIALS)
     credentials = Credentials.from_authorized_user_info(creds_dict)
     youtube = build('youtube', 'v3', credentials=credentials)
@@ -396,22 +382,13 @@ def fazer_upload_youtube(video_path, titulo, descricao, tags, thumbnail_path=Non
     media = MediaFileUpload(video_path, resumable=True)
     request = youtube.videos().insert(part='snippet,status', body=body, media_body=media)
     response = request.execute()
-    video_id = response['id']
-    if thumbnail_path and os.path.exists(thumbnail_path):
-        try:
-            youtube.thumbnails().set(videoId=video_id, media_body=MediaFileUpload(thumbnail_path)).execute()
-            print("✅ Thumbnail enviada!")
-        except Exception as e:
-            print(f"⚠️ Thumbnail: {e}")
-    return video_id
+    return response['id']
 
 def main():
     print(f"{'📱' if VIDEO_TYPE == 'short' else '🎬'} Iniciando...")
     os.makedirs(VIDEOS_DIR, exist_ok=True)
     os.makedirs(ASSETS_DIR, exist_ok=True)
-    
     noticia = buscar_noticias()
-    
     if noticia:
         titulo_video = noticia['titulo']
         keywords = titulo_video.split()[:5]
@@ -424,72 +401,57 @@ def main():
         keywords = info['keywords']
         print(f"🎯 Título: {titulo_video}")
         print(f"🔍 Keywords: {', '.join(keywords)}")
-    
     print("✍️ Gerando roteiro...")
     roteiro = gerar_roteiro(VIDEO_TYPE, titulo_video, noticia)
-    
     audio_path = f'{ASSETS_DIR}/audio.mp3'
     criar_audio(roteiro, audio_path)
-    
     audio_clip = AudioFileClip(audio_path)
     duracao = audio_clip.duration
     audio_clip.close()
     print(f"⏱️ {duracao:.1f}s")
-    
-    print("🖼️ Buscando mídias...")
-    quantidade = 6 if VIDEO_TYPE == 'short' else max(50, int(duracao / 12))
-    
-    # LÓGICA CORRIGIDA DE BUSCA DE MÍDIAS
-    if config.get('palavras_chave_fixas'):
-        # Canal especial (ex: alien) com keywords fixas
-        keywords = config.get('palavras_chave_fixas')
-        print(f"🎯 Keywords fixas: {', '.join(keywords)}")
-        midias = buscar_midia_pexels(keywords, tipo='video', quantidade=quantidade)
-    elif config.get('tipo') == 'noticias' and config.get('fonte_midias') == 'bing':
-        # Canal de notícias com Bing
-        midias = buscar_imagens_bing(keywords, quantidade)
+    usar_bing = config.get('tipo') == 'noticias' and config.get('fonte_midias') == 'bing'
+    if usar_bing:
+        print("🌐 Modo: BING (notícias)")
     else:
-        # Canais normais (curiosidades)
-        midias = buscar_midia_pexels(keywords, tipo='video', quantidade=quantidade)
-    
-    # Complementar se poucas mídias
-    if len(midias) < 3:
+        print("📸 Modo: PEXELS")
+    if config.get('palavras_chave_fixas'):
+        keywords_busca = config.get('palavras_chave_fixas')
+        print(f"🎯 Keywords fixas: {', '.join(keywords_busca)}")
+    else:
+        keywords_busca = keywords
+    midias_sincronizadas = analisar_roteiro_e_buscar_midias(roteiro, duracao, usar_bing)
+    if len(midias_sincronizadas) < 3:
         print("⚠️ Poucas mídias, complementando...")
-        midias.extend(buscar_midia_pexels(['nature landscape'], tipo='foto', quantidade=5))
-    
-    print(f"✅ {len(midias)} mídias")
-    
-    print("🎥 Montando...")
+        extras = buscar_midia_pexels(['nature landscape'], tipo='foto', quantidade=5)
+        tempo_restante = duracao - sum([m['duracao'] for m in midias_sincronizadas])
+        duracao_extra = tempo_restante / len(extras) if extras else 0
+        for extra in extras:
+            midias_sincronizadas.append({
+                'midia': extra,
+                'inicio': duracao - tempo_restante,
+                'duracao': duracao_extra
+            })
+            tempo_restante -= duracao_extra
+    print("🎥 Montando vídeo sincronizado...")
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     video_path = f'{VIDEOS_DIR}/{VIDEO_TYPE}_{timestamp}.mp4'
-    
     if VIDEO_TYPE == 'short':
-        resultado = criar_video_short(audio_path, midias, video_path, duracao)
+        resultado = criar_video_short_sincronizado(audio_path, midias_sincronizadas, video_path, duracao)
     else:
-        resultado = criar_video_long(audio_path, midias, video_path, duracao)
-    
+        resultado = criar_video_long_sincronizado(audio_path, midias_sincronizadas, video_path, duracao)
     if not resultado:
         print("❌ Erro")
         return
-    
-    # Thumbnail desativada (YouTube automático)
-    thumbnail_path = None
-    
     titulo = titulo_video[:60] if len(titulo_video) <= 60 else titulo_video[:57] + '...'
     if VIDEO_TYPE == 'short':
         titulo += ' #shorts'
-    
     descricao = roteiro[:300] + '...\n\n🔔 Inscreva-se!\n#' + ('shorts' if VIDEO_TYPE == 'short' else 'curiosidades')
-    
     tags = ['curiosidades', 'fatos'] if not noticia else ['noticias', 'informacao']
     if VIDEO_TYPE == 'short':
         tags.append('shorts')
-    
     print("📤 Upload...")
-    video_id = fazer_upload_youtube(video_path, titulo, descricao, tags, thumbnail_path)
-    
+    video_id = fazer_upload_youtube(video_path, titulo, descricao, tags)
     url = f'https://youtube.com/{"shorts" if VIDEO_TYPE == "short" else "watch?v="}{video_id}'
-    
     log_entry = {
         'data': datetime.now().isoformat(),
         'tipo': VIDEO_TYPE,
@@ -499,20 +461,15 @@ def main():
         'video_id': video_id,
         'url': url
     }
-    
     log_file = 'videos_gerados.json'
     logs = []
     if os.path.exists(log_file):
         with open(log_file, 'r', encoding='utf-8') as f:
             logs = json.load(f)
-    
     logs.append(log_entry)
-    
     with open(log_file, 'w', encoding='utf-8') as f:
         json.dump(logs, f, indent=2, ensure_ascii=False)
-    
     print(f"✅ Publicado!\n🔗 {url}")
-    
     for file in os.listdir(ASSETS_DIR):
         try:
             os.remove(os.path.join(ASSETS_DIR, file))
@@ -521,6 +478,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
