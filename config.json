@@ -1,37 +1,48 @@
 {
-  "tipo": "alien",
+  "tipo": "motivacional",
   "canal": {
-    "nome": "Vorlathi de Solkara",
-    "descricao": "Reflexões de um observador de mundos sobre a vida, a consciência e a força interior"
+    "nome": "Reflexões Profundas",
+    "descricao": "Filosofia, motivação e reflexões sobre a vida"
   },
   
   "duracao_minutos": 10,
   "voz": "pt-BR-AntonioNeural",
   
   "temas": [
-    "o que aprendi observando civilizações que quase desapareceram",
-    "por que a dor é um mecanismo de evolução",
-    "a diferença entre sobreviver e viver",
-    "como espécies fortes lidam com o fracasso",
-    "o que mantém uma consciência viva em ambientes hostis",
-    "por que os humanos subestimam sua própria força",
-    "a ilusão do conforto e o preço da estagnação",
-    "como a adversidade molda caráter",
-    "a coragem como escolha silenciosa",
-    "o significado de continuar quando tudo parece perdido",
-    "o que civilizações avançadas sabem sobre disciplina",
-    "a solidão como etapa do crescimento",
-    "por que desistir é sempre mais fácil",
-    "o valor do tempo para espécies mortais",
-    "o que observo nos humanos que resistem",
-    "a força invisível da vontade",
-    "por que a mente precede a realidade",
-    "o que destrói civilizações antes da extinção física",
-    "o que faz uma espécie prosperar",
-    "a diferença entre esperança e ilusão"
-  ],
-  
-  "palavras_chave_fixas": ["atmosphere", "exoplanet", "space", "universe"],
-  
-  "persona": "alien_solkara"
+    "a força da superação pessoal",
+    "coragem para enfrentar o desconhecido",
+    "força de vontade e disciplina",
+    "o propósito da vida",
+    "resiliência diante das adversidades",
+    "transformação através do sofrimento",
+    "a jornada do autoconhecimento",
+    "paciência e persistência",
+    "libertação do medo",
+    "aceitação e mudança",
+    "o poder da escolha",
+    "sabedoria através da experiência",
+    "gratidão e abundância",
+    "autenticidade e verdade interior",
+    "superando a zona de conforto",
+    "a importância do fracasso",
+    "encontrando força na vulnerabilidade",
+    "propósito além do sucesso",
+    "mentalidade de crescimento",
+    "liberdade emocional",
+    "construindo legado",
+    "vencendo a procrastinação",
+    "autocompaixão e perdão",
+    "encontrando paz interior",
+    "transformando dor em poder",
+    "responsabilidade pessoal",
+    "desapego e renovação",
+    "confiança em si mesmo",
+    "viver no presente",
+    "a arte da recomeçar",
+    "equilíbrio entre razão e emoção",
+    "humildade e aprendizado contínuo",
+    "esperança nos momentos difíceis",
+    "força invisível da fé",
+    "caráter forjado nas dificuldades"
+  ]
 }
